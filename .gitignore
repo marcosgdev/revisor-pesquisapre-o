@@ -1,0 +1,22 @@
+# Credenciais e variáveis de ambiente
+.env
+*.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Uploads e resultados gerados
+uploads/
+logs/
+results/
+
+# Sistema
+*.log
+.DS_Store
+Thumbs.db

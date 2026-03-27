@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Scoring - Pesquisa de Preços</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+
+        /* Main Card */
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--light);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray);
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: white;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            background: white;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: var(--light);
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .upload-area p {
+            font-size: 1.2rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Button */
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+            padding: 2rem;
+            background: var(--light);
+            border-radius: 16px;
+            margin-top: 2rem;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 40px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            transition: width 0.3s ease;
+        }
+
+        .progress-message {
+            text-align: center;
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+
+        /* Result */
+        .result-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            padding: 3rem;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 10px solid;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 1rem;
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 1rem;
+            color: var(--gray);
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-card {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .category-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .category-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .category-name {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .category-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .category-progress {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .category-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.5s ease;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* History */
+        .history-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .history-item {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .history-item:hover {
+            background: white;
+            border-left-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .history-info h4 {
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .history-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-concluido {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-processando {
+            background: #fef3c7;
+            color: #ca8a04;
+        }
+
+        .status-erro {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #16a34a;
+            border-left: 4px solid #16a34a;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #2563eb;
+            border-left: 4px solid #2563eb;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .score-circle {
+                width: 150px;
+                height: 150px;
+            }
+
+            .score-value {
+                font-size: 3rem;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Sistema de Scoring</h1>
+            <p>Análise Inteligente de Pesquisas de Preços</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('upload')">
+                    📤 Upload
+                </button>
+                <button class="tab" onclick="switchTab('history')">
+                    📋 Histórico
+                </button>
+                <button class="tab" onclick="switchTab('about')">
+                    ℹ️ Sobre
+                </button>
+            </div>
+
+            <!-- Upload Tab -->
+            <div id="upload-tab" class="tab-content active">
+                <div id="alert-container"></div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <span class="upload-icon">📄</span>
+                    <p><strong>Clique aqui</strong> ou arraste seu PDF</p>
+                    <p style="font-size: 0.9rem; color: var(--gray);">Pesquisa de Preços • Máximo 10MB</p>
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <strong>📎 <span id="fileName"></span></strong>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray);">
+                            <span id="fileSize"></span>
+                        </p>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf">
+
+                <button class="btn btn-primary btn-full" id="analyzeBtn" onclick="uploadFile()" disabled>
+                    <span id="btnText">🚀 Iniciar Análise</span>
+                    <span class="spinner" id="btnSpinner" style="display: none;"></span>
+                </button>
+
+                <!-- Progress Section -->
+                <div class="progress-section" id="progressSection">
+                    <h3 class="progress-title">⏳ Analisando Documento</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%">
+                            <span id="progressPercent">0%</span>
+                        </div>
+                    </div>
+                    <p class="progress-message" id="progressMessage">Iniciando análise...</p>
+                </div>
+
+                <!-- Result Section -->
+                <div class="result-section" id="resultSection">
+                    <div class="score-display">
+                        <div class="score-circle" id="scoreCircle">
+                            <div>
+                                <div class="score-value" id="scoreValue">0</div>
+                                <div class="score-label">pontos</div>
+                            </div>
+                        </div>
+                        <div class="classification-badge" id="classificationBadge">
+                            PROCESSANDO
+                        </div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-card">
+                            <div class="detail-label">Classificação</div>
+                            <div class="detail-value" id="detailClassification">-</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-label">Nível de Risco</div>
+                            <div class="detail-value" id="detailRisk">-</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-label">Aptidão</div>
+                            <div class="detail-value" id="detailAptitude">-</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom: 1rem; color: var(--dark);">📊 Pontuação por Categoria</h3>
+                    <div class="categories-grid" id="categoriesGrid">
+                        <!-- Categories will be inserted here -->
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="downloadReport()">
+                            📄 Baixar Relatório HTML
+                        </button>
+                        <button class="btn btn-primary" onclick="downloadJSON()">
+                            💾 Baixar JSON
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetAnalysis()">
+                            🔄 Nova Análise
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <h2 style="margin-bottom: 1.5rem; color: var(--dark);">📋 Histórico de Análises</h2>
+                <div class="history-list" id="historyList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p><strong>Nenhuma análise ainda</strong></p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            Faça sua primeira análise na aba Upload
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Tab -->
+            <div id="about-tab" class="tab-content">
+                <h2 style="margin-bottom: 1.5rem; color: var(--dark);">ℹ️ Sobre o Sistema</h2>
+                
+                <div style="line-height: 1.8; color: var(--gray);">
+                    <p style="margin-bottom: 1rem;">
+                        <strong style="color: var(--dark);">Sistema de Scoring Automático</strong> para análise de pesquisas de preços na administração pública.
+                    </p>
+
+                    <h3 style="color: var(--dark); margin: 2rem 0 1rem;">📊 Escala de Pontuação</h3>
+                    <ul style="list-style-position: inside; margin-left: 1rem;">
+                        <li><strong style="color: var(--success);">90-100 pontos:</strong> Conformidade Alta (Risco Baixo)</li>
+                        <li><strong style="color: #84cc16;">75-89 pontos:</strong> Conformidade Média-Alta (Risco Baixo-Médio)</li>
+                        <li><strong style="color: var(--warning);">60-74 pontos:</strong> Conformidade Média (Risco Médio)</li>
+                        <li><strong style="color: #f97316;">40-59 pontos:</strong> Conformidade Baixa (Risco Alto)</li>
+                        <li><strong style="color: var(--danger);">0-39 pontos:</strong> Não Conformidade (Risco Crítico)</li>
+                    </ul>
+
+                    <h3 style="color: var(--dark); margin: 2rem 0 1rem;">🎯 Categorias Avaliadas</h3>
+                    <ul style="list-style-position: inside; margin-left: 1rem;">
+                        <li><strong>Estrutura Mínima</strong> (25 pontos)</li>
+                        <li><strong>Condições Comerciais</strong> (20 pontos)</li>
+                        <li><strong>Parâmetros de Pesquisa</strong> (20 pontos)</li>
+                        <li><strong>Metodologia Estatística</strong> (20 pontos)</li>
+                        <li><strong>Validade e Governança</strong> (15 pontos)</li>
+                    </ul>
+
+                    <h3 style="color: var(--dark); margin: 2rem 0 1rem;">✅ Baseado em</h3>
+                    <ul style="list-style-position: inside; margin-left: 1rem;">
+                        <li>Lei 14.133/2021 (Nova Lei de Licitações)</li>
+                        <li>IN SEGES 65/2021 (Pesquisa de Preços)</li>
+                        <li>Melhores práticas de gestão pública</li>
+                    </ul>
+
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: var(--light); border-radius: 12px;">
+                        <p style="text-align: center;">
+                            <strong style="color: var(--dark);">💡 Dica:</strong><br>
+                            Para obter pontuações acima de 90, certifique-se de incluir<br>
+                            memória de cálculo, CV calculado e documentação completa.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+        let currentAnalysisId = null;
+        let pollInterval = null;
+
+        // Switch Tabs
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        }
+
+        // File Upload Handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and Drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+
+            if (!file.name.endsWith('.pdf')) {
+                showAlert('Apenas arquivos PDF são aceitos', 'error');
+                fileInput.value = '';
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showAlert('Arquivo muito grande. Máximo: 10MB', 'error');
+                fileInput.value = '';
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            analyzeBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Upload File
+        async function uploadFile() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('arquivo', file);
+
+            // Disable button
+            analyzeBtn.disabled = true;
+            document.getElementById('btnText').textContent = '⏳ Enviando...';
+            document.getElementById('btnSpinner').style.display = 'inline-block';
+
+            try {
+                const response = await fetch(`${API_URL}/api/v1/analisar`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao enviar arquivo');
+                }
+
+                const data = await response.json();
+                currentAnalysisId = data.id_analise;
+
+                // Show progress
+                document.getElementById('progressSection').classList.add('active');
+                document.getElementById('uploadArea').style.display = 'none';
+                analyzeBtn.style.display = 'none';
+
+                // Start polling
+                startPolling();
+
+            } catch (error) {
+                showAlert('Erro ao enviar arquivo: ' + error.message, 'error');
+                analyzeBtn.disabled = false;
+                document.getElementById('btnText').textContent = '🚀 Iniciar Análise';
+                document.getElementById('btnSpinner').style.display = 'none';
+            }
+        }
+
+        // Polling for Status
+        function startPolling() {
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/v1/status/${currentAnalysisId}`);
+                    const data = await response.json();
+
+                    updateProgress(data.progresso, data.mensagem);
+
+                    if (data.status === 'concluido') {
+                        clearInterval(pollInterval);
+                        await loadResult();
+                    } else if (data.status === 'erro') {
+                        clearInterval(pollInterval);
+                        showAlert('Erro na análise: ' + data.mensagem, 'error');
+                        resetAnalysis();
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar status:', error);
+                }
+            }, 3000);
+        }
+
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressMessage').textContent = message;
+        }
+
+        // Load Result
+        async function loadResult() {
+            try {
+                const response = await fetch(`${API_URL}/api/v1/resultado/${currentAnalysisId}/resumo`);
+                const data = await response.json();
+
+                displayResult(data);
+
+                // Hide progress, show result
+                document.getElementById('progressSection').classList.remove('active');
+                document.getElementById('resultSection').classList.add('active');
+
+                showAlert('Análise concluída com sucesso!', 'success');
+            } catch (error) {
+                showAlert('Erro ao carregar resultado: ' + error.message, 'error');
+            }
+        }
+
+        function displayResult(data) {
+            const score = data.pontuacao_total;
+            const classification = data.classificacao;
+            const risk = data.nivel_risco;
+            const aptitude = data.aptidao;
+
+            // Score
+            document.getElementById('scoreValue').textContent = score.toFixed(1);
+            
+            // Color
+            const scoreCircle = document.getElementById('scoreCircle');
+            const badge = document.getElementById('classificationBadge');
+            
+            let color;
+            if (score >= 90) color = 'var(--success)';
+            else if (score >= 75) color = '#84cc16';
+            else if (score >= 60) color = 'var(--warning)';
+            else if (score >= 40) color = '#f97316';
+            else color = 'var(--danger)';
+
+            scoreCircle.style.borderColor = color;
+            document.getElementById('scoreValue').style.color = color;
+            badge.style.background = color;
+            badge.textContent = classification;
+
+            // Details
+            document.getElementById('detailClassification').textContent = classification;
+            document.getElementById('detailRisk').textContent = risk;
+            document.getElementById('detailAptitude').textContent = aptitude.replace(/_/g, ' ');
+
+            // Categories (mock data - would come from full result)
+            displayCategories();
+        }
+
+        function displayCategories() {
+            const categories = [
+                { name: 'Estrutura Mínima', score: 22, max: 25 },
+                { name: 'Condições Comerciais', score: 17, max: 20 },
+                { name: 'Parâmetros de Pesquisa', score: 18, max: 20 },
+                { name: 'Metodologia Estatística', score: 18, max: 20 },
+                { name: 'Validade e Governança', score: 14, max: 15 }
+            ];
+
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = '';
+
+            categories.forEach(cat => {
+                const percent = (cat.score / cat.max) * 100;
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `
+                    <div class="category-header">
+                        <span class="category-name">${cat.name}</span>
+                        <span class="category-score" style="color: var(--primary);">
+                            ${cat.score}/${cat.max}
+                        </span>
+                    </div>
+                    <div class="category-progress">
+                        <div class="category-progress-fill" style="width: ${percent}%"></div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray);">
+                        ${percent.toFixed(0)}%
+                    </p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Download Functions
+        function downloadReport() {
+            window.open(`${API_URL}/api/v1/resultado/${currentAnalysisId}/html`, '_blank');
+        }
+
+        function downloadJSON() {
+            window.open(`${API_URL}/api/v1/resultado/${currentAnalysisId}/json`, '_blank');
+        }
+
+        // Reset
+        function resetAnalysis() {
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            analyzeBtn.disabled = true;
+            document.getElementById('btnText').textContent = '🚀 Iniciar Análise';
+            document.getElementById('btnSpinner').style.display = 'none';
+            document.getElementById('uploadArea').style.display = 'block';
+            analyzeBtn.style.display = 'block';
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultSection').classList.remove('active');
+            currentAnalysisId = null;
+            
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+        }
+
+        // Load History
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_URL}/api/v1/analises`);
+                const data = await response.json();
+
+                const list = document.getElementById('historyList');
+                
+                if (data.analises.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p><strong>Nenhuma análise ainda</strong></p>
+                            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                Faça sua primeira análise na aba Upload
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = '';
+                data.analises.forEach(item => {
+                    const date = new Date(item.data_inicio).toLocaleString('pt-BR');
+                    const statusClass = item.status === 'concluido' ? 'status-concluido' : 
+                                       item.status === 'em_processamento' ? 'status-processando' : 
+                                       'status-erro';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `
+                        <div class="history-info">
+                            <h4>${item.arquivo_original || 'Documento'}</h4>
+                            <div class="history-meta">
+                                <span>📅 ${date}</span>
+                                <span>🆔 ${item.id_analise.substring(0, 8)}</span>
+                            </div>
+                        </div>
+                        <span class="status-badge ${statusClass}">
+                            ${item.status === 'concluido' ? '✅ Concluído' : 
+                              item.status === 'em_processamento' ? '⏳ Processando' : 
+                              '❌ Erro'}
+                        </span>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+            }
+        }
+
+        // Alert
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <span>${type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Check API on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    console.log('✅ API conectada');
+                }
+            } catch (error) {
+                showAlert('⚠️ API não está rodando. Inicie com: uvicorn api_scoring:app --reload', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

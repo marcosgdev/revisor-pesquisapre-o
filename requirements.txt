@@ -1,0 +1,24 @@
+# Dependências do Sistema de Scoring - Pesquisa de Preços
+
+# OpenAI
+openai>=1.10.0
+
+# PDF Processing
+pdfplumber>=0.10.0
+PyPDF2>=3.0.0
+
+# API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Utilities
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+
+# Data Processing (opcional, mas útil)
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP Requests (para testes)
+requests>=2.31.0
